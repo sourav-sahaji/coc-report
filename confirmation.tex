@@ -1,116 +1,233 @@
 \documentclass{article}
+\usepackage[margin=1in]{geometry}
 \usepackage{outlines}
+\usepackage{graphicx}
+\graphicspath{{./images/}}
 
-\title{Thesis Title}
-\author{Sourav Garg}
+\title{\textbf{\huge 6-DoF Semantics-Aware Condition- and Viewpoint-Invariant Visual SLAM}}
+\author{\textbf{\Large Sourav Garg}}
+\date{}
 
 \begin{document}
 
+\begin{figure}
+\centering
+\includegraphics[scale=0.8]{QUT-SEF-Logo}
+\end{figure}
+
+\vspace{5cm}
+
 \maketitle
+
+\vspace{1cm}
+\begin{center}
+\textbf{
+\emph{\LARGE Confirmation of Candidature\\}
+}
+\vspace{2cm}
+\textbf{
+\Large \emph{Principal Supervisor}: \\ Associate Professor Michael Milford \\
+}
+\vspace{1cm}
+\textbf
+{
+\Large \emph{Associate Supervisor}: \\ Associate Professor Ben Upcroft \\
+} 
+\end{center}
+
+\vspace{2cm}
+
+\begin{figure}
+\centering
+\includegraphics{QUT-Robots-ACRV-logo}
+\end{figure}
+
+\pagebreak
+
+\abstract{
+Visual SLAM is a robotic competency to simultaneously localize and map the environment using only visual cues. Although it has been vastly explored by researchers in past decades, it still lacks the required robustness to be put to use in any practical application. A visual SLAM system has three primary components: visual place recognition for localization, visual odometry for egomotion estimation and a representation map of the environment. In this report and later in the thesis, we will explore each of these components in detail and then comprehend it with another dimension of semantics.
+
+The use of visual cues implies using robust representations of raw images to be able to correctly recognize places in the map that a robot revisits as well as to accurately estimate egomotion in order to create a map of environment. Such image representations need to be robust against variations in the viewpoint and environmental conditions or alternatively, be able to accordingly adapt to such variations. Further, the representation maps created by state-of-the-art methods are generally only geometric and researchers have only recently started adding semantics to the maps for obtaining interactive 3D reconstructions of environment. However, a semantic SLAM system would not just require semantic mapping, it should also be able to exploit semantic information for effective localization, and finally, an integrated SLAM framework which is able to generate better semantic labels as well.
+
+We will particularly address the following research questions:
+\begin{itemize}
+ \item How can we characterize a visual SLAM system against variations in environment and egomotion, and make it more robust for both visual place recognition and visual odometry?
+ \item How can semantic information related to images add value to a visual SLAM system?
+ \item Can we develop a general purpose 6-DoF semantics-aware SLAM system robust to condition and viewpoint variations.
+\end{itemize}
+
+The answers to these questions will finally allow us to build a 3D reconstruction of environment which is semantically interactive and can be used to demonstrate its use in plethora of practical applications that use mobile robots, like indoor monitoring, grasping, navigation etc.
+
+}
+
+\pagebreak
+
 \tableofcontents
 
+\pagebreak
 
 \section{Introduction}
 
-\subsection{Motivation, Challenges and Research Gap}
-\subsubsection{Motivation from practical applications}
-\begin{itemize}
- \item Start with practical applications that motivate the research problem that is to be solved with the PhD thesis.
- \item Some examples of such applications in a broader perspective.
- \subitem Autonomous vehicles and ADAS, surveillance, indoor navigation (big retail stores, malls, auditoriums etc.) etc.   
- \item Gradually converge to the exact research problem to be solved.
- \subitem Ability to recognize places and estimate ego-motion visually under extreme changes in environmental conditions.
- \item Some examples of potential practical applications of the solution that will be developed with the proposed research work.
-%  \subitem Autonomous vehicles navigating outdoor and autonomous robots navigating indoor
-%  \item Why is it important to solve this research problem?
-%  \subitem Enable self-driving cars
-\end{itemize}
+\subsection{Robotics}
+Robotics is a rapidly growing field with an increasing number of applications in industry, household and military. The ultimate goal of creating human-like, rather advanced, artificially intelligent, completely autonomous robots, capable of performing multiple complex tasks is yet a long way to go. However, gradual research and development within different aspects of robotics has enabled the use of robots in specific practical applications. 
 
-\subsubsection{Challenges involved in development of the related technology}
+An interesting robotic competency, which will be explored in this report is \emph{SLAM}, that is, Simultaneous Localization and Mapping. It is the capability of a mobile robot to create a map of its environment while also keeping track of its location within that map. Such an ability is really important for a mobile robot because the foremost requirement for accomplishing any complex task is \emph{awareness}, that is, a robot being aware of its operating environment as well as itself within that environment. While a number of practical applications may use pre-built map of the environment, identifying changes within that map, which is often the case, would still require SLAM. Autonomous vehicles or ADAS systems, retail store and warehouse stock management, deep sea bed modeling, domestic services etc. are all the practical use cases of a SLAM based robotic solution.
 
-\subsubsection{Research Gap}
+\subsection{SLAM: \emph{Is it solved?}}
+This question here is not just asked generally by those who have heard of SLAM as a research term before, but many roboticists as well. Sebastian Thrun and Jose Neira in \cite{frese2010interview} answered to this in 2010, confirming that it is solved for static environments and the pertaining problems are: dynamic objects within the environment and semantic understanding of the environment. The interview also discussed the community's shift towards visual SLAM, given that the digital cameras are an affordable source of information-rich data. This defines the locus of our research which will deal with visual SLAM, its challenges related to dynamics of the environment as well as its semantic understanding.
 
-\begin{itemize}
- \item Briefly review the literature to highlight the research gap quoting the related work.
- \item Mention exactly where the research gap is.
-\end{itemize}
+\subsection{Visual SLAM}
+Visual SLAM is a robotic competency to simultaneously localize and map the environment using only visual cues. These visual cues can come from a monocular camera, a stereo-rig or RGB-D sensors. The key components of a visual SLAM system are: \emph{Visual Odometry}, \emph{Place Recognition} and \emph{Representation Map}. \emph{Visual Odometry} is the capability of a mobile robot to estimate egomotion using only vision as input. \emph{Place Reconstruction} means the ability to recognize a place when the robot revisits that place. \emph{Representation Map} mainly implies the way of storing the visual information in form of a map of places or visual landmarks \ref{fig:slamExample}. We will explore visual SLAM and its components further in subsequent sections along with the corresponding literature in respective fields.
+
+\begin{figure}[htbp]
+\centering
+ \includegraphics[scale=0.8]{SLAM}
+ \caption{3D reconstruction of environment using LSD-SLAM \cite{Engel2014lsd}}
+ \label{fig:slamExample}
+\end{figure}
+
+\section{Literature Review}
+\subsection{SLAM Overview}
+The most common and traditional approaches for SLAM use probabilistic methods to maintain both the pose of the robot and the location of the landmarks. This includes Extended Kalman Filter \cite{Chatila1985}, Rao-Blackwellized Particle Filter \cite{montemerlo2007fastslam}, Expectation Maximization \cite{thrun2005probabilistic} etc. The second set of methods uses sparse graph of constraints and non-linear optimization for recovering map and camera poses as in \cite{Olson2006, Thrun2006, Sunderhauf2012b}. The third and relatively newer paradigm, with respect to visual SLAM, includes Structure from Motion (SfM) \cite{beardsley1997sequential} techniques with help of Bundle Adjustment \cite{Triggs2000}, where the scene structure and camera motion, both are jointly recovered using optimization techniques \cite{Strasdat2010}. These methods have been initially used for visual odometry derived from stereo \cite{Nister2004, Pollefeys2004} or monocular vision \cite{Gr2015, Klein2007, Nister2004, Strasdat2010} and recently for visual SLAM \cite{Mur-Artal2015,Mouragnon2006}. The fourth and the last category of SLAM solutions is inspired from biology \cite{milford2008robot} and builds on the cognitive abilities of animals to localize and map their environment, for example, rodents as shown in \cite{Milford2004} and ants in \cite{Collett2010}.
+
+\subsection{Visual Place Recognition}
+A place is defined as a distinct location in the representation map of an environment. Visual places are described using the image features which can be broadly classified into two categories: \textbf{local} and \textbf{global} image features. 
+
+\paragraph{Local Image Features:} The local image features have a corresponding location within the image associated with each feature and are generally described using a local image descriptor. The most common and efficient approaches for place recognition using point-based local features employ Bag of Words (BoW) approach \cite{Nister2006,Sivic2003}. The image features like SIFT \cite{Lowe2004}, SURF \cite{Bay2008}, BRIEF \cite{Calonder2010}, ORB \cite{Rublee2011} etc. have been used in a BoW framework in FAB-MAP 2.0 \cite{Cummins2010}, LSD-SLAM \cite{Engel2014lsd}, ORB-SLAM \cite{Mur-Artal2015} and others \cite{Galvez-Lopez2012, Mur-Artal2014}. There exist further extensions to these methods for high performance, for example, building an incremental visual words vocabulary on-line \cite{Angeli2008}, using BoW-Pairs \cite{kejriwal2016high}, adding more geometrical constraints between the words \cite{CADENA} etc.. These methods and in general, point-feature based methods, work remarkably well with viewpoint invariance and can be used for wide-baseline stereo matching efficiently. However, they are susceptible to extreme variations in the appearance of the environment as well as feature redundancy that arises due to repeated, bland or texture-less environment. Such conditions lead to, what is know as, \textbf{perceptual aliasing} as shown in Figure:\ref{fig:perceptualAliasing}, that is, two different places (or features) appear to be similar. The variations in appearance, as mentioned, can also arise due to environmental conditions like different time of day, weather or season, or due to shadow, motion blur or varying illumination etc. for example in scenarios as shown in Figure:\ref{fig:conditionVariations}.
+
+\begin{figure}[htbp]
+\centering
+ \includegraphics[scale=0.5,clip,trim=0cm 1.2cm 0cm 0cm]{perceptual-aliasing}
+ \caption{\emph{Perceptual Aliasing} between images in first and second row shows perceptual similarity between these places, though belonging to different physical locations in the map. \cite{cummins2007probabilistic}}
+ \label{fig:perceptualAliasing}
+\end{figure}
+
+\begin{figure}
+ \centering
+ \begin{minipage}{0.4\textwidth}
+\raggedright
+\includegraphics[scale=0.9]{nordland-seasons}
+\centering(a)
+ \end{minipage}
+ \hspace{1cm}
+\begin{minipage}{0.4\textwidth}
+\raggedleft
+  \includegraphics[scale=0.51]{Alderley-day-Image02477}\\
+  \includegraphics[scale=0.51]{Alderley-night-Image03670}\\
+  \centering(b)
+\end{minipage}
+\caption{Vast appearance changes in the environmental conditions can cause same place to appear very different due to variation in (a) seasons \cite{lopez2017appearance}, (b) weather and time of day \cite{Milford2012}.}
+\label{fig:conditionVariations}
+\end{figure}
+
+
+\paragraph{Global Image Features:} The second method of describing places uses global image descriptors. Such features include HoG \cite{Naseer2014}, PCA \cite{Krose2001}, WI-SURF \cite{Badino2012}, BRIEF-GIST \cite{Sunderhauf2011} etc. that describe the whole image with a single feature. The methods like SeqSLAM \cite{Milford2012}, LSD-SLAM \cite{Engel2014lsd}, Photometric Bundle Adjustment \cite{alismail2016photometric} and others \cite{Naseer2014,McManus2015} have proven the successful use of whole-image matching for place recognition. These image matching approaches fall in the category of \textbf{direct} or \textbf{featureless} methods. Unlike local feature matching, these methods can be used efficiently for only narrow-baseline matching and therefore, are susceptible to large variations in the viewpoint of the scene. Though, they can guarantee sub-pixel accuracy in matching, the computation complexity goes upward, especially when an image pyramid is used to tackle viewpoint variations. As opposed to local point features, these techniques work well with vast changes in appearance and conditions of the environment. 
+
+\paragraph{Hybrid and Deep-Learned:} There are some of the place recognition methods that make use of a combination of local and global image descriptors. Such approaches have been shown to work well with both condition and viewpoint variations as in \cite{McManus2014}, \cite{Milford2008} and \cite{Niko2015}, but they either require site-specific training, are not scalable or lack generality. Also, the use of deep-learned features as in \cite{chen2017deep,chen2014convolutional} has not been shown to be helpful for visual SLAM beyond 1D route traversals.
+
+\paragraph{Summary:}
+The local image features suffer from appearance and condition variations and global image features are susceptible to viewpoint variations. The condition- and viewpoint-invariant place representation using deep-learned features looks promising, but none of such representations have been ever used to estimate relative 3D pose between the pair of matching places, also termed as \textbf{loop closures}. Hence, it remains a challenge to develop a better place representation or use the existing ones in such a way that they can be integrated in a 6-DoF visual SLAM system. Such a system can then be used to create 3D maps, therefore, leading to numerous opportunities of interacting with such a map in order to develop practical SLAM applications. 
+
+\subsection{Visual Odometry}
+\paragraph{Motion Estimation:} A visual SLAM system needs a source of motion information in order to build a map with metric relationship among places that it represents. There are several methods that use different types of sensors to get this motion information, for example, IMU (Inertial Measurement Unit) in \cite{Kneip2011, Milford2014}, GPS (Global Positioning System) in \cite{Agrawal2006, Floros2013}, LASER in \cite{Kohlbrecher2011}, \cite{Paul2010}, robot-wheel odometry in \cite{Bazeille2011}, OBD (On-Board Diagnostics) data in \cite{pepperell2015automatic,Pepperell2014}, Hall-Effect sensor in \cite{Pepperell2014}, DVL (Doppler Velocity Log) dead reckoning in \cite{Mahon2008} etc. On the other hand, a purely vision based SLAM system only uses visual cues to estimate egomotion. This is termed as \emph{Visual Odometry} and is used quite often in visual SLAM systems. Although the use of dedicated sensors provides an accurate and regular estimation of motion as compared to visual odometry, it is still preferable because it eliminates the use of an extra sensor and the overhead of interfacing and sensor fusion.
+
+\paragraph{Feature Tracking or Direct Matching:} Most of the methods used for visual odometry are based on local features which are either detected as \emph{corners} like Harris \cite{Harris1988}, FAST \cite{EdwardRosten} etc., \emph{blobs} like SIFT \cite{Lowe2004}, SURF \cite{Bay2008}, CenSurE \cite{Forsyth2008} etc. or \emph{edgelets} \cite{klein2008improving}. All these methods are based on local feature extraction and matching, and are therefore efficient in wide-baseline matching leading to its high viewpoint-invariance. On the other hand, there are methods that use direct whole image matching for semi-dense \cite{Forster2014,Engel2013} or dense \cite{Newcombe2011,Tykkala2011} 3D reconstruction of environment. These methods are generally more suitable for narrow-baseline matching and are capable of sub-pixel accuracy. Though these methods cannot handle large viewpoint variations, they certainly perform better than local features based methods when it comes to robustness towards appearance variations or repeated and texture-less environments. The authors in \cite{alismail2016direct} have also shown robustness towards low-light environment using direct visual odometry.
+
+\paragraph{Deep VO:}
+The authors in \cite{konda2015learning} explicitly model visual odometry problem in a deep learning framework using stereo image pairs. The other deep-learned models that estimate pose between images and are closely related to visual odometry are Posenet \cite{kendall2015posenet}, Deep Tracking \cite{dequaire2016deep} and Sfm-Net \cite{vijayanarasimhan2017sfm}. The use of deep learning for motion estimation using visual cues is in its stage of infancy as all these methods are very recent and either require range information, environment-specific training or extensive engineering and have not be shown to be scalable similar to what a visual SLAM system would require. Moreover, all these systems use images under ideal environmental conditions and are likely to fail in adverse conditions because lack of generality in image data while training.
+
+\paragraph{Summary:}
+The visual odometry approaches suffer from similar issues like visual place recognition. The choice between local and global image features has trade-off between viewpoint- and condition-invariance of image representation. Moreover, most of the visual odometry methods require parameter tuning according to the environment and are prone to failures due to rapid camera motion, low-light environment and radiometric variations. The deep-learning based solutions haven't yet been convincingly able to offer better solution either. The failure of visual odometry is catastrophic for a visual SLAM system if it solely relies on it for motion estimation, hence it remains a challenge to develop robust motion estimation solution using visual odometry or some hybrid approach.
+
+\subsection{Representation Map and 3D Reconstruction}
+\paragraph{Types of Maps:}
+Mapping is an integral part of a SLAM system. An environment representation map acts as the reference database for a place recognition system, unless it is based on pure image retrieval, where actual location of a place does not really matter as in \cite{Cummins2010} and \cite{Nister2006}. For all other cases, these representation maps can be of very different nature in terms of how they represent the environment. They can be classified into three categories: \textbf{topological}, \textbf{metric} and \textbf{topometric}. A \emph{topological} map has only a relative arrangement of places with respect to each other, for example, in \cite{Lui2012, Milford2012}. The places in such a map are merely set of points on a 1D route traversal and are connected with the logic of their order of occurrence. On the other hand, a \emph{metric} map is built using physical location information of a place as in \cite{Gutmann2008, Klein2007}. Here, the places are connected using metric distance (up to scale) and closely represent the real map of the environment. The third category of representation is a combination of both these approaches that uses topological-metric or \emph{topometric} map as in \cite{Angeli2009, Bazeille2011, Konolige2011}. These representations help in handling large-scale maps or defining a logical layer over the metric maps for an easier interface. For example, semantic maps of environment \cite{sunderhauf2016place,flint2010growing} can enable higher-level reasoning and planning.
+\paragraph{3D Maps:}
+The representation maps often describe places in 3D using range information either from LASER \cite{Paul2010,Stewart2012}, RGBD sensors \cite{Henry2012,Whelan2013} or stereo images \cite{CADENA,alismail2016direct,Davison2007}. Though explicitly sensing 3D information makes the problem simpler, it comes with other overheads of using more sensors and complex sensor fusion techniques. The 3D structure information of places in a map can also be extracted from moving cameras using Structure from Motion (SfM) \cite{beardsley1997sequential} and local Bundle Adjustment \cite{Triggs2000,Engels2006} techniques. Most of these methods use local image feature for sparse \cite{Davison2007, Mur-Artal2015}, semi-dense \cite{Engel2014lsd, Mur-Artal2015b} or dense \cite{Newcombe2011} reconstruction of environment. Some preliminary work has been done in \cite{alismail2016photometric} that performs featureless, and therefore direct photometric bundle adjustment.
+
+\paragraph{Summary:}
+The state-of-the-art visual SLAM methods use 3D maps demonstrating dense reconstruction of the environment. Such a representation is indeed important for enabling robot's interaction with the environment similar to humans. However, it still lacks semantics which are important to impart meaning to the pixels or segments in a 3D reconstruction for an effective interaction. The use of semantics in visual SLAM has been explored in next section.
+
+\subsection{Semantics in visual SLAM}
+\paragraph{Semantics Within and Across Places:}
+The use of semantics in a visual SLAM system has been explored from two different perspectives. The first one explores the meaning \textbf{within a place} by semantically labeling the objects \cite{ranganathan2007semantic}, patches \cite{posner2008online}, pixels \cite{flint2010growing}, superpixels \cite{xiao2009multiple} etc. within the image, often in conjugation with range information. The second perspective is a broader view of these places that performs categorization \textbf{across the places} within a map, usually on a larger scale, for example, in \cite{stachniss2005semantic,sunderhauf2016place,pronobis2011semantic}. However, in both the scenarios, use of semantics enables higher-level reasoning and interactive modeling of the environment.
+
+\paragraph{Object Semantics:}
+There have been several attempts towards developing a semantic SLAM system based on objects encountered in the environment. The use of pre-trained 3D object models in \cite{civera2011towards} and semantic object-class segmentation in \cite{stuckler2012semantic}, is one way to incorporate object semantics in an off-the-shelf visual SLAM system. Another set of approaches include SLAM frameworks where objects are integral part of the optimization equation as in \cite{fioraio2013joint,salas2013slam++,vasudevan2007cognitive,galvez2016real}. The authors in \cite{salas2014dense} combine object recognition and semantic image segmentation for dense semantic SLAM. While all these approaches are \textbf{object-centric}, the authors in \cite{flint2010growing,nuchter2008towards} also consider semantics of structural elements like wall, floor, ceiling etc. to semantically characterize the visual SLAM system. Furthermore, the use of deep learning frameworks for more powerful semantic object recognition has also helped in sparse \cite{girshick2014rich} or dense \cite{long2015fully,chen2014semantic} object-centric semantic segmentation as shown in \ref{fig:denseObjectSegmentation}.
+
+\begin{figure}
+ \centering
+ \includegraphics[scale=0.25]{denseObjectSegmentation}
+ \caption{Dense Semantic Object Segmentation as proposed in \cite{long2015fully} using Fully Convolutional Networks.}
+ \label{fig:denseObjectSegmentation}
+\end{figure}
+
+
+\paragraph{Place Semantics:}
+Although, \emph{object-centric} approaches look very promising, they usually neglect the importance of visual scenes that do not really have any particular object in focus, for example, a mountain range, crop-field, train-station etc. The need of semantics for such a \textbf{place-centric} scene has been emphasized in \cite{zhou2014learning}, where the authors train a deep-convolutional network on \emph{place-centric} images to obtain semantic place categories. Similarly, authors in \cite{Patterson2012SunAttributes} use a plethora of semantic scene attributes to label different places. Furthermore, authors in \cite{laffont2014transient} use transient semantic attributes, like time of day, weather, season etc. to characterize places.
+
+\paragraph{Summary:}
+The use of semantics in most of the research work is limited by the type of semantics and the extent to which they are integrated within a visual SLAM framework. The semantics related to objects as opposed to places and those focusing on structural elements as opposed to transient attributes, limit the generality and scalability of their use. Also, very few of the proposed methods utilize semantics to an extent where both localization and mapping can benefit from it. Further, there are even fewer such methods that have demonstrated use of SLAM framework to improve semantic labeling of either objects or places. Hence, a holistic approach taking these challenges and limitations into account is currently needed to develop a \textbf{Semantic SLAM} system.
+
 
 \section{Research Problem}
 
+\subsection{Research Gap}
+The research gap following the literature review can be summarized in following points:
+\begin{itemize}
+ \item It remains a challenge to develop a robust place recognition system that can be seamlessly integrated into a 6-DoF visual SLAM system.
+ \item Visual Odometry solutions are brittle to variations in environmental conditions, rapid camera motion and radiometric variations.
+ \item The failure of visual odometry is catastrophic for visual SLAM system, hence a hybrid approach towards motion estimation is a must.
+ \item The geometric maps created by state-of-the-art methods lack semantics and therefore hinder effective interaction with the reconstructed environment.
+ \item The use of semantics in visual SLAM is limited to either localization or mapping and lacks a holistic approach from which potentially both, semantic labeling and visual SLAM, can benefit.
+\end{itemize}
+
 \subsection{Problem Statement}
-\begin{outline}
- \1 Elaborate on the research problem after formally stating it.
- \2 Developing a condition- and viewpoint-invariant visual semantic SLAM system 
-%  to be deployed outdoor for autonomous vehicles and ADAS, and indoor for creating smart retail stores.
- \1 Highlight the key aspects of the problem
- \1 Describe the challenges related to the problem that we are going to solve in proposed research.
- \2 Characterization of the components of such a competency for a detailed understanding of what needs to be fixed
- \2 Effective use of semantic information for robustness and meaningful interaction within the system
- \2 Creating a 3D SLAM system integrating different useful components from 1D or 2D and scale them accordingly.
-\end{outline}
+
+The overarching research problem following the literature review and the identified research gap can be stated as: \\
+\textbf{How can we develop a general purpose 6-DoF semantics-aware visual SLAM system which is condition- and viewpoint-invariant and adapts to changes in environment as well as egomotion?}
+
 
 \subsection{Research Questions}
-The overarching research question following the literature review and the identified research gap is - \\\emph{How can we develop a general purpose visual place recognition or visual SLAM system which is condition- and viewpoint-invariant and adapts to changes in environment as well as egomotion?} 
-\\
-In order to answer this and to enable such a system, we need to answer the following questions:
+
+In order to address the problem as described above and to enable such a SLAM system, we need to answer the following questions:
 \begin{outline}
- \1 How can we identify and model the key characteristics of visual SLAM like competencies in robotic applications?
- \\ \emph{The three main components of any such competency are: the \textbf{robot} enabled with sensors (like camera), the \textbf{environment} where the robot operates and the \textbf{algorithm} that enables effective interaction between the former and the latter.}
+ \1 How can we characterize a visual SLAM system against variations in environment and egomotion, and make it more robust for both visual place recognition and visual odometry?
+%  \\ \emph{The three main components of any such competency are: the \textbf{robot} enabled with sensors (like camera), the \textbf{environment} where the robot operates and the \textbf{algorithm} that enables effective interaction between the former and the latter.}
  \2 How can we characterize the place recognition, visual odometry and visual SLAM algorithms for robustness against variations in camera viewpoint and environmental conditions?
  \2 How can we characterize the environment so as to enable adaptive behavior in robots by dynamically determining the changes in the environment?
- \2 How can we estimate the camera motion under extreme environmental conditions and speedy camera movements?
+ \2 How can we estimate the camera motion under extreme environmental conditions and rapid camera movements?
  
  \1 How can we use semantic information related to images in order to increase the robustness of visual place recognition and SLAM methods?
  \2 How can we encode environmental conditions information into semantic labels within and across the images in an image sequence?
  \2 Can we use semantic image labels to categorize the environment into meaningful segments for adaptive robot behavior?
  \2 Can we learn image pixel-level semantic mask for robust place recognition under extreme environmental conditions?
  
- \1 What are the key unsolved challenges in developing a condition- and viewpoint-invariant 3D (metric) visual SLAM system?
+ \1 How can we develop a 6-DoF \emph{semantics-aware} SLAM system which is robust towards condition and viewpoint variations?
  \2 How can we estimate 3D relative pose between images with vast appearance variations?
- \2 How well does the characterization of 1D place recognition system and semantic labeling across and/or within the images scale in 3D?
+ \2 What are the different ways in which semantics can help 6-DoF visual SLAM system for both localization and semantic mapping?
+ \2 How can we use the visual SLAM system to perform better semantic labeling and learn new semantic classes online?
+ \2 Can we use our system to demonstrate an application that semantically interacts with the 3D reconstruction of environment?
  
- 
- \1 Elaborate on each question.
 \end{outline}
-
-
-\section{Literature Review}
-
-\subsection{Problem Overview}
-\begin{itemize}
- \item Provide an overview of the research problem quoting the literature.
-\end{itemize}
-
-\subsection{Related Work}
-\begin{itemize}
- \item Describe in details the related body of work with respect to the research problem and the research questions.
-\end{itemize}
 
 
 \section{Research Plan}
 
-Elaborate following points in subsequent subsections.
-\begin{outline}
- \1 Characterization of environment and camera sensor with respect to visual place recognition and visual SLAM algorithms.
- \1 Exploring possible ways and extent of using semantic information to improve visual place recognition and SLAM system.
- \1 Developing a 3D metric visual SLAM system which is condition- and viewpoint-invariant and adapts to changes in environment and egomotion.
-\end{outline}
-
 \subsection{Characterization of visual SLAM system}
-The visual SLAM system or any other similar competency developed as a robotic application can broadly be understood to comprise these three components:
+The visual SLAM system or any other similar competency developed as a robotic application can broadly be understood to comprise these three general components:
 \begin{enumerate}
  \item \emph{Environment} where the robot operates or learns about its surroundings.
  \item \emph{Robot and Sensors} for interacting with the environment and enabling sensing and responding in some form.
  \item \emph{Algorithm Interface} is what enables the interaction between the robot and the environment and is designed specific to the application.
 \end{enumerate}
-\textbf{Add figure?}
 
-In order to develop a well-performing robotic application, it is important to understand the aforementioned components and their characteristics that significantly impact the performance. Therefore, it remains one of the research questions to identify such characteristics specific to the application and appropriately model them. Th research plan for exploring the characterization of each component is detailed in the following subsections.
+In order to develop a well-performing robotic application, it is important to understand the aforementioned components and their characteristics that significantly impact the performance. Therefore, it remains one of the research questions to identify such characteristics specific to the application and appropriately model them.
 
 \subsubsection{Visual Odometry and Place Recognition}
-Visual Simultaneous Localization and Mapping constitutes: \emph{Visual Odometry}, \emph{Visual Place Recognition} and \emph{Mapping} of environment. The state-of-the-art visual SLAM systems or any of its individual constituents are often developed based on certain assumptions with respect to its environment, its sensors or the operating characteristics. Though it is not possible to estimate all the possibilities of operating characteristics beforehand, it is vital to understand the ones that significantly impact the performance.
+Visual Simultaneous Localization and Mapping constitutes: \emph{Visual Odometry}, \emph{Visual Place Recognition} and \emph{Mapping} of environment. The state-of-the-art visual SLAM systems or any of its individual constituents are often developed based on certain assumptions with respect to its environment, its sensors or the operating characteristics. Though it is not possible to estimate all the possibilities of operating characteristics beforehand, it is vital to understand those significantly impacting the performance.
 
-\paragraph{SLAM systems at disposal:}We plan to explore the state-of-the-art methods like SeqSLAM \cite{Milford2012}, ORB-SLAM \cite{Mur-Artal2015}, LSD-SLAM \cite{Engel2014lsd} etc. in order to understand their certain characteristics, for example, invariance to camera viewpoint and environmental conditions - both of which lie at the core of a general purpose visual SLAM system.
+\paragraph{SLAM systems at disposal:}We plan to explore the state-of-the-art methods like SeqSLAM \cite{Milford2012}, ORB-SLAM \cite{Mur-Artal2015}, LSD-SLAM \cite{Engel2014lsd} etc. in order to understand their certain characteristics, for example, invariance to camera viewpoint and environmental conditions - both lie at the core of a general purpose visual SLAM system.
 
 \paragraph{Data Gathering:}The simultaneous condition- and viewpoint-invariance of a 3D visual SLAM system has yet not been achieved due to challenges involved. Therefore, it is important to understand the performance sensitivity of the existing algorithms towards these variations. Such an analysis will also require the appropriate data to conduct tests. However, the availability of real or simulated data corresponding to condition and viewpoint variations is limited. This is mainly because it is difficult, time-consuming and expensive to collect real data with a sound ground-truth generation system especially for condition variations - which essentially means traversing places at different times of day, in different weather conditions and across seasons. Similarly, capturing images of a place for all possible camera viewpoints is not always feasible. It seems relatively easier to do the same in simulation, given there exists a 3D model of a city or alike with sufficient rendering, so that condition- and viewpoint-varied traverses could be infinitely generated, but such a ready-to-use model does not exist and needs a lots of effort.
 
@@ -134,94 +251,282 @@ We are rather interested in local variations in the environment where global con
 
 \paragraph{Speed Normalization:}We will look into the scope of improving place recognition using visual odometry. Most of the practical visual place recognition applications for example, an autonomous vehicle, do not exhibit uniform motion during the journey. The motion estimation can help in speed normalizing the collected imagery, so that the places are separated by a constant physical distance instead of constant number of frames.
 
-\paragraph{Motion Prediction:}We also plan to develop a motion estimator or predictor as a backup switch for state-of-the-art visual odometry methods such that it provides some source of information to roughly localize the robot even if such an estimate is less accurate or less precise. It is important because such estimates can be improved at a later stage by either using visual place recognition or improved visual odometry.
+\paragraph{Motion Estimation:}We also plan to develop a motion estimator or predictor as a backup switch for state-of-the-art visual odometry methods such that it provides some source of information to roughly localize the robot even if such an estimate is less accurate or less precise. It is important because such estimates can be improved at a later stage by either using visual place recognition or improved visual odometry.
 
 
 \subsection{Utilizing Semantic Information}
-The use of semantic information has recently become easier because of deep-learned classifiers and regressors that can be trained on very large image data to precisely predict the semantics of the test image. These semantics can be used to achieve a meaningful interpretation of places and maps used in a visual SLAM system. We plan to make use of this semantic information to improve visual place recognition and visual SLAM system in different ways as described in following subsections.
+The use of semantic information has recently become easier because of deep-learned classifiers and regressors \cite{girshick2014rich,zhou2014learning} that can be trained on very large image data to precisely predict the semantics of the test image. These semantics can be used to achieve a meaningful interpretation of places and maps used in a visual SLAM system. We plan to make use of this semantic information to improve visual place recognition and visual SLAM system in different ways as described in following subsections.
 
 \subsubsection{Environment Semantics}
-One of the simplest use of semantics seems to be imparting meaning to the environment where robot operates. The place categorization \cite{zhou2014learning} and scene attributes detection \cite{Patterson2012SunAttributes} using semantics has not been explored within a place recognition framework so far. Unfortunately, these semantic classifiers do not provide sufficient information regarding environmental conditions like time of day, season or weather etc., but mostly characterize the structure of the scene leading to particular place category labels. These transient conditions of environment have been semantically explored in \cite{laffont2014transient}. 
+One of the simplest use of semantics seems to be imparting meaning to the environment where robot operates in form of a semantic map. The place categorization \cite{zhou2014learning} and scene attributes detection \cite{Patterson2012SunAttributes} using semantics has not been explored within a place recognition framework so far. Unfortunately, these semantic classifiers do not provide sufficient information regarding environmental conditions like time of day, season or weather etc., but mostly characterize the structure of the scene leading to particular place category labels. These transient conditions of environment have been semantically explored separately in \cite{laffont2014transient}. 
 
 We plan to use the semantic attributes based on scene structure as well as transient conditions from different classifiers to create ground truth semantic labels of both types for a huge database. These labeled images will then be used to train (or retrain) a deep neural network to learn the semantics of images for both scene structure as well as transient conditions. This will make place categorization more robust and easy to incorporate in a place recognition system.
 
 \subsubsection{Semantic Segmentation \emph{Across} Places}
-The segmentation of places in an environment has been explored in earlier sections based on place matching scores. The use of semantics for segmenting the environment can be advantageous because firstly, deep-learned features are more discriminative as compared to hand-crafted ones and secondly, it can help in filtering or shortlisting of the place matching candidates by performing a semantic matching first.
+The segmentation of places in an environment has been explored in earlier sections based on place matching scores. The use of semantics for segmenting the environment can be advantageous because firstly, deep-learned features are more discriminative \cite{chen2017deep} as compared to hand-crafted ones and secondly, it can help in filtering or shortlisting of the place matching candidates by performing a semantic matching first.
 
 The semantic segmentation within an environment will be explored in context of place recognition. The filtering or shortlisting of place matching candidates leading to reduction in computation time for searching places will be benchmarked for large databases. The performance improvement in place recognition using place matching score as described earlier and using semantics will be also be compared.
 
 \subsubsection{Semantic Segmentation \emph{Within} Places}
+The semantic segmentation of an image has been vastly explored in literature, but depending on the target application for such segmentation, most of them are not relevant for a visual SLAM system. The advances in semantic segmentation based on object recognition, whether sparse \cite{girshick2014rich} or dense \cite{long2015fully}, are useful in visual SLAM because it enables resolving of each individual entity within an image. Most of these methods use deep convolutional networks and will be a suitable choice for this thesis as well. The bottleneck that can be foreseen is the lack of generality with respect to the objects that are recognized. 
 
-\subsection{3D Condition- and Viewpoint-Invariant Visual SLAM}
+First, it does not cover each and every object in the world, which is obviously not an easy task, hence we will need a hybrid approach that also learns new object classes on-line. 
+
+Second, object recognition focuses more on indoor environments where most of these objects are found. It is quite common to encounter images that don't have any ``object'', especially in outdoor scenarios. The way objects are defined usually for object recognition tasks do not always consider wall, ceiling or floor like entities as a separate object, rather it is considered as background and the focus is on the object categories defined for the problem. This shortcoming has been fulfilled separately by some authors by proposing semantic place categorization that emphasizes the concept of a \emph{place} as opposed to object-centric images.
+
+Third, object recognition doesn't take into account the changing conditions of the environment. Even the semantic place categorization methods do not wholly represent a place with attributes that correspond to environmental conditions. In order to incorporate semantics \emph{within} an image into a visual SLAM system, it is important to have a semantic representation of an image that covers objects, place categories as well as the attributes corresponding to environmental conditions. 
+
+We plan to use different pre-trained networks that individually semantically characterize objects, places and environmental conditions, to cross-label the training images of each other. Then we will use one of the more robust networks to retrain all the re-labeled images. The trained network will hence have all the semantic labeling properties as desired for a robust visual SLAM system.
+
+\subsection{6-DoF Semantics-Aware SLAM}
 
 \subsubsection{Condition-Invariant Relative Pose Estimation}
-\subsubsection{Semantics in 3D}
+We have explored visual place recognition systems that are condition-invariant \cite{Milford2012,Niko2015,chen2017deep}, but they lack the ability to generate a 3D relative pose between the matching places, also termed as \emph{loop closures}. In order to obtain a 6-DoF visual SLAM system, it is important to have the 3D pose estimation for condition-invariant representation of places.
+
+We plan to first explore the possibility of using a condition- and viewpoint-invariant robust place representation and then enable it in some way to estimate relative pose. The deep-learned features are the most likely option for this case. The second option is to use a place representation which is known to efficiently work in the pose estimation framework of visual SLAM and then make it robust towards condition variations. The best choice for this seems to be the whole image feature descriptors which can be used in direct image matching framework for relative pose estimation with a descriptor-constancy assumption instead of brightness-constancy.
+
+\subsubsection{Semantics for SLAM}
+The use of semantics in visual SLAM framework has mainly focused on individual components of SLAM, that is, either localization or mapping. As also discussed in previous section, a holistic approach for semantic segmentation \emph{within} places is required which will help in semantics based localization within the map. However, at the same time, we also want a semantic map that will cover all the semantics whether \emph{within} or \emph{across} the places. Hence, it is important to understand that role of semantics is with respect to both \emph{space} and \emph{time}, that actually echoes our concept of semantics \emph{within} and \emph{across} the places respectively as discussed earlier as well.
+
+Our approach towards fusing semantic information in visual SLAM system would be to use pixel- or segment- (or patch-) level semantic descriptor for representation of a place. Each semantic segment can then be jointly optimized with camera poses in either graph optimization or local bundle adjustment framework. The semantic map can then be hierarchical, that is, a broader view of the map would be a topological semantic map containing different chunks of environment, and each such chunk can then be a metric map of semantic entities.
+
+\subsubsection{SLAM for Semantics}
+We have so far explored in lots of detail the use of semantics for visual SLAM. In order to have a complete semantic SLAM system, we also need to close the loop by creating the flow of information from SLAM towards semantics. For example, visual place recognition applied on conditionally varied places can help in applying same structural semantic labels to those places, but different corresponding label for environmental conditions.
+
+We plan to use a set of semantic labels under the category of \emph{unclassified} which will be applied to image segments that couldn't be labeled with sufficient confidence. This could happen either because of varying appearance of the segment or because of occlusion due to dynamic objects in environment. A new \emph{unclassified} label will be generated whenever the unlabeled image segment is sufficiently different from the previous \emph{unclassified} image segments. Now, these \emph{unclassified} labels can be classified correctly whenever the place is revisited with the help of place recognition by helping in deciding which part of the place should actually become part of the map, and what part is actually occluded and should not be considered in map.
+
+\subsection{Demo: Semantically Interactive 3D Reconstruction}
+The final stage of this thesis will be a demonstration of semantically interactive 3D reconstruction of an environment using the proposed system. This setup can then be interacted for different tasks like navigation, for example, ``go to the kitchen'', ``lead me to exit gate'' etc. or inventory management, for example, number of chairs and tables in restaurant, stock inquiry in a retail store etc., or use it as a semantic interface for other robotic applications.
+
+\subsection{Timeline}
+The proposed timeline for the thesis is attached below:
+
+\begin{figure}[!htbp]
+\centering
+% \hspace{-1cm}
+ \makebox[\textwidth][c]{\includegraphics[scale=0.625]{timeline}}
+ \label{fig:Timeline}
+\end{figure}
+
 
 \section{Work Progress}
-\begin{outline}
- \1 Describe the work done till date with respect to the research problem and how it relates to the main objective
- 
- 
- \2 Formal characterization of place recognition and visual SLAM algorithms like SeqSLAM and ORB-SLAM
- 
- \3 Using simulated 3d environment to understand the performance variations in place recognition, visual odometry and SLAM algorithms by testing repeatedly generated image sequences that vary with respect to the viewpoint (6-DoF) and environmental conditions (time of day etc.).
- 
- 
- \2 Characterization of camera-motion as well as the environment where the camera operates.
- 
- \3 Developing methods to improve place recognition by segmenting the environment into meaningful chunks
- \4 Using semantic place categorization to segment data into semantic chunks like indoor-outdoor, light-dark etc. in order to define neighborhood for a reference image for effective place matching within that chunk.
- \4 Using SAD scores within consecutive frames instead of a semantic categorizer to achieve the same as above.
- \4 Dynamically defining such segments by using cues from query images.
- 
- \3 Developing methods to improve place recognition, visual odometry and visual SLAM by estimating camera speed under poor environmental conditions
- \4 Improving place recognition performance by speed-normalizing the image sequence for effective place matching using camera speed as a function of SAD scores between consecutive frames.
- \4 Developing hybrid visual odometry by use of state-of-the-art method backed with a SAD score based camera speed estimator to prevent failing of visual odometry and visual SLAM algorithms due to factors like low-light environment, fast camera motion, motion blur etc.
- 
- \1 Mention publications or submitted work (if any)
- \2 IROS'16
- 
-\end{outline}
 
 \subsection{Performance Evaluation Using High Fidelity Simulation}
-The use of high fidelity simulation is an attractive option for most of the researchers primarily because it gives access to infinite data generation which is very close to real world. A simulated environment enables detailed performance evaluation of algorithms which helps in understanding the data-dependent characteristics of the system and optimizing its parameters. We evaluated various robotic vision algorithms like place recognition, visual odometry, visual SLAM and object recognition to study their performance variations with respect to variations in the input data. The high fidelity simulation of a city-like environment was initially developed to generate different datasets and then fed to different algorithms for performance evaluation. The work was done with collaborative efforts from peers and the research components relevant to this report are described in subsequent subsections.
+The use of high fidelity simulation is an attractive option for most of the researchers primarily because it gives access to infinite data generation which is very close to real world. A simulated environment enables detailed performance evaluation of algorithms which helps in understanding the data-dependent characteristics of the system and optimizing its parameters. We evaluated various robotic vision algorithms like place recognition, visual odometry, visual SLAM and object recognition to study their performance variations with respect to variations in the input data. The high fidelity simulation of a city-like environment was initially developed and the required datasets were then generated which were finally fed to different algorithms for performance evaluation.. Figure:\ref{fig:simulatedDataImageGrid} shows a grid of sample images from a set of datasets used for evaluating place recognition performance. The images are taken from same place but at different time of day and varying camera viewpoints. The work was done with collaborative efforts from peers and the research components that are relevant to this report are described in subsequent subsections.
+
+\begin{figure}
+ \centering
+ \includegraphics[scale=0.7]{dataset-image-variety-grid}
+ \caption{Sample images from the datasets used, all images are taken from the same place at different times of day and viewpoint variations. From left to right, viewpoints are the base unmodified path, offset left 2m, offset right 2m, angled up $30^{\circ}$, and angled right $30^{\circ}$.}
+ \label{fig:simulatedDataImageGrid}
+\end{figure}
+
 
 \subsubsection{Place Recognition - SeqSLAM}
-The visual place recognition is the capability of a mobile robot to recognize a place during a revisit solely using visual cues. Thus, it requires repeated traverses of the environment with no restriction on viewpoint or environmental conditions like time of day, weather or season etc. during the subsequent visit. We evaluated performance of SeqSLAM - a condition-invariant place recognition algorithm using different datasets generated from the simulated environment. These datasets varied with respect to 5 different times of day, that is, Dawn, Morning, Noon, Afternoon and Sunset as well as different camera viewpoints with variations in lateral offset, vertical orientation (pitch) and horizontal orientation (yaw). We observed the performance curves which as per the expectations showed a decrease in performance with extreme viewpoint variations and a constant high performance with varying conditions of environment. We also performed some experiments on real world data along with its simulated version to observe the performance trends which were found to be similar. However, the results on simulated data were consistently better than the real world data which is also often the case with any simulation.
+The visual place recognition is the capability of a mobile robot to recognize a place during a revisit solely using visual cues. Thus, it requires repeated traverses of the environment with no restriction on viewpoint or environmental conditions like time of day, weather or season etc. during the subsequent visit. We evaluated performance of SeqSLAM - a condition-invariant place recognition algorithm using different datasets generated from the simulated environment as shown in Figure:\ref{fig:simulatedDataImageGrid}. These datasets vary with respect to 5 different times of day, that is, Dawn, Morning, Noon, Afternoon and Sunset as well as different camera viewpoints with variations in lateral offset, vertical orientation (pitch) and horizontal orientation (yaw). 
+
+The performance evaluation curves for SeqSLAM as shown in Figure:\ref{fig:slamCharacterize}(a) show a decrease in performance with extreme viewpoint variations as per the expectations and a constant high performance with varying conditions of environment. 
+
+We also performed some experiments on real world data along with its simulated version to observe the performance trends which were found to be similar. However, the results on simulated data were consistently better than the real world data which is also often the case with any simulation. Figure:\ref{fig:realVsSim} shows the real and simulated version of a street dataset and Figure:\ref{fig:real-world-results} shows the corresponding performance comparison.
+
+\begin{figure}
+\centering
+%   \hspace{-1cm}
+  \includegraphics[width=17cm,height=2cm]{real-data-lateralOffset}\\
+  \includegraphics[width=17cm,height=2cm]{simulated-data-lateralOffset}\\
+  
+  \caption{Images for five different traversals of a street with different lateral offsets. This real world data (top) is used to compare the trend of performance change with change in lateral shifts as compared to the simulated data (bottom).}
+  \label{fig:realVsSim}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[height=5cm]{real-world-results}
+    \caption{Comparison of SeqSLAM performance falloff between simulated and real-world environments as lateral offset increases. As is often the case, simulated performance is better in an absolute sense, but the trend is the same in both cases.}
+    \label{fig:real-world-results}
+\end{figure}
+
+\begin{figure}
+\centering
+\begin{tabular}{cc}
+% 	\hspace{-1cm}
+	\includegraphics[scale=0.4]{SeqSLAM-results-offset}&
+	\includegraphics[scale=0.4]{orbslam-offset-results}\\
+	
+	\includegraphics[scale=0.4]{SeqSLAM-results-pitch}&	
+	\includegraphics[scale=0.4]{orbslam-pitch-results}\\
+	
+	\includegraphics[scale=0.4]{SeqSLAM-results-yaw}&
+	\includegraphics[scale=0.4]{orbslam-yaw-results}\\
+	
+	(a) SeqSLAM & (b) ORB-SLAM \\
+\end{tabular}
+	\caption{ (a) SeqSLAM and (b) ORB-SLAM's performance for datasets varying with respect to lateral camera offset, vertical orientation and lateral orientation from top to bottom as well time of day. SeqSLAM shows expected behaviour mostly apart from few abrupt troughs. ORB-SLAM doesn't show any consistent performance change with respect to the imposed variations.}
+	\label{fig:slamCharacterize}
+\end{figure}
 
 \subsubsection{Visual SLAM - ORB-SLAM}
-ORB-SLAM is a state-of-the-art visual SLAM system proven to work well for both monocular and stereo or depth-based input. Similar to performance evaluation of visual place recognition, evaluating a visual SLAM system also requires repetitive traversing of an environment, but in a continuous loop. This is necessary to make sure that all the components of a SLAM system that is visual odometry, place recognition and mapping are effectively tested. Therefore, different traverses of the environment at different times of day and varying viewpoints as also described in previous subsection were always appended by a noon baseline dataset. Such an arrangement made sure that visual odometry component gets tested in the first part of the data along with its capability of continuity across the appended data in terms of local changes. The variation of first part across different datasets and second part within the dataset made sure that the place recognition component is effectively tested. We used average trajectory error as a performance measure for generating the performance curves. It was observed that the performance of ORB-SLAM did not show any consistent pattern with variations to either viewpoint or environmental conditions. In general, in a visual SLAM system, occurrence of even a single false loop closure or a failure in visual odometry is catastrophic. The former may lead to an absurd trajectory with high error and the latter will lead to an incomplete trajectory. Moreover, most of the visual SLAM algorithms use initialization methods that use random numbers, therefore, expecting a consistent pattern in a performance curve is probably not viable.
+ORB-SLAM is a state-of-the-art visual SLAM system proven to work well for both monocular and stereo or depth-based input. Similar to performance evaluation of visual place recognition, evaluating a visual SLAM system also requires repetitive traversing of an environment, but in a continuous loop. This is necessary to make sure that all the components of a SLAM system that is visual odometry, place recognition and mapping are effectively tested. Therefore, different traverses of the environment at different times of day and varying viewpoints as also described in previous subsection were always appended by a noon baseline dataset. Such an arrangement made sure that visual odometry component gets tested in the first part of the data along with its capability of continuity across the appended data in terms of local changes. The variation of first part across different datasets and second part within the dataset made sure that the place recognition component is effectively tested.
+
+We used average trajectory error as a performance measure for generating the performance curves. It was observed that the performance of ORB-SLAM did not show any consistent pattern with variations to either viewpoint or environmental conditions as shown in Figure:\ref{fig:slamCharacterize}(b). In general, in a visual SLAM system, occurrence of even a single false loop closure or an instance of failure in visual odometry is catastrophic for the system. The former leads to an absurd trajectory with high error and the latter imlies an incomplete trajectory. Moreover, most of the visual SLAM algorithms use initialization methods that use random numbers, therefore, expecting a consistent pattern in a performance curve is probably not viable.
 
 \subsubsection{Paper Accepted at IROS 2016}
-The research work was accepted as a conference paper at IROS 2016.
+The research work was accepted as a conference paper at IROS 2016 \cite{skinner2016high}.
 
 \subsection{Place Recognition Using Semantics}
-The use of semantics with respect to places has been rediscovered recently with deep-learned CNN models after its successful experiments with object recognition. The semantics for places are generally with respect to a single image, and provide labels about the scene structure, texture, environmental conditions etc. \textbf{``semantic labels fig''} Though, it enables place recognition in a course manner, recognizing \emph{specific} places in an environment which may have similar semantic labels is the \emph{traditional} place recognition problem dealt in robotics. We explored the use of semantic labels for individual places within an image dataset in improving place recognition performance.
+The use of semantics with respect to places has become popular only recently with deep-learned CNN models after its successful experiments with object recognition. The semantics for places are generally described with respect to a single image, and provide labels about the scene structure, texture, environmental conditions etc as shown in Figure:\ref{fig:semLabels}. Though, it enables place recognition in a course manner, recognizing \emph{specific} places in an environment which generally have similar semantic labels in their neighborhood, is the \emph{traditional} place recognition problem usually dealt in robotics. We explored the use of semantic labels for individual places within an image dataset in improving place recognition performance as described in subsections below.
+
+\begin{figure}
+ \centering
+ \begin{tabular}{ccc}
+  \includegraphics[scale=0.25]{1-corridor}&
+  \includegraphics[scale=0.25]{2-staircase}&
+  \includegraphics[scale=0.25]{5-lawn}\\
+  \includegraphics[scale=0.25]{6-subwayStation}&
+  \includegraphics[scale=0.25]{7-railroadTrack}&
+  \includegraphics[scale=0.25]{8-trainStation}\\
+ \end{tabular}
+\caption{Semantically labelled images from Campus Indoor-Outdoor and CTA-Rail Dataset.}
+\label{fig:semLabels}
+\end{figure}
+
+
+\begin{figure}
+\centering
+\begin{tabular}{cc}
+	\hspace{-1cm}
+	\includegraphics[clip, trim=2cm 4cm 2cm 4cm,width=8cm,height=4.5cm]{cta-dataset-segmentation-1}&
+	
+	\includegraphics[clip, trim=0cm 4cm 0cm 2cm,scale=0.3]{flowchart}\\
+	(a) & (b) \\
+\end{tabular}
+	\caption{ (a) shows semantic labels corresponding to different segments of the environment in CTA-Rail dataset. (b) shows a block diagram representing the flow of semantic information from the place categorization module to the place recognition module for improving place matching scores.}
+	\label{fig:flowchart}
+\end{figure}
 
 \subsubsection{Semantic Segmentation of Environment}
-One of the apparent ways of using semantic labels in place recognition is to coarsely filter the places that may match the query place. This will definitely reduce the computation time for place search within the database, and may also improve performance depending on the robustness of features used to semantically categorize places. Another way of utilizing the semantic information in context of place recognition is to exploit the temporal nature of places data encountered in both reference and query databases. A mobile robot traversing an environment is most likely to witness variations in its environment, both minor and major, especially in the applications of a visual SLAM system. We developed a system that performed semantic place categorization on an incoming stream of images to form temporal semantic segments of places which are generally similar. This was followed by a more \emph{specific} (or \emph{traditional}) place recognition system that utilized these temporal segments to define the neighborhood region around reference query places to bias their matching scores accordingly. \textbf{``block dia``} The effectiveness of this system is more pronounced for the image datasets having significant variations in the environment, for example, transiting between indoor and outdoor environments like a train running though tunnels as well as open areas or a mobile robot within a university campus; transiting between regions of varying illumination or texture like an urban canyon versus highway within a forest etc. We tested our system on a wide variety of datasets ranging from a 23 km train journey to short campus traverses, all exhibiting variations in environment with respect to scene structure, illumination, environmental conditions, texture etc. \textbf{''dataset example fig"} We observed a considerable performance gain using the proposed system for datasets with medium to extreme variations in their environment. \textbf{``results fig''}
+One of the apparent ways of using semantic labels in place recognition is to coarsely filter the places that may match the query place. This will definitely reduce the computation time for place search within the database, and may also improve performance depending on the robustness of features used to semantically categorize places. Another way of utilizing the semantic information in context of place recognition is to exploit the temporal nature of place data encountered in both reference and query databases. A mobile robot traversing an environment is most likely to witness variations in its environment, both minor and major, especially in the applications of a visual SLAM system. 
+
+We developed a system that performed semantic place categorization on an incoming stream of images to form temporal semantic segments of places which are appear similar. Figure:\ref{fig:flowchart}(a) shows a timeline of labels for different segments within one of the experimental datasets. The segmentation was then followed by a more \emph{specific} (or \emph{traditional}) place recognition system that utilized these temporal segments to define the neighborhood region around reference query places to bias their matching scores accordingly. Figure:\ref{fig:flowchart}(b) shows a block diagram reprsenting the flow of semantic information from place categorization to place recognition. 
+
+The effectiveness of such a system is more pronounced for the image datasets having significant variations in the environment, for example, transiting between indoor and outdoor environments like a train running though tunnels as well as open areas (Figure-\ref{fig:flowchart}(a)) or a mobile robot within a university campus (Figure:\ref{fig:semLabels}); transiting between regions of varying illumination or texture like an urban canyon versus highway within a forest etc. We tested our system on a wide variety of datasets ranging from a 23 km train journey to short campus traverses, all exhibiting variations in environment with respect to scene structure, illumination, environmental conditions, texture etc. Figure:\ref{fig:rioTransImages} shows transition from outdoor to indoor of a house with varying illumnation. We observed a considerable performance gain using the proposed system for datasets with medium to extreme variations in their environment. Figure:\ref{fig:performanceChart} shows comparative results between vanilla method and proposed approach for two of the datasets we experimented with.
+
+\newcommand{\imgW}{2.4cm}
+\newcommand{\imgH}{1.4cm}
+
+\begin{figure}[htbp]
+\centering
+\begin{tabular}{cccccc}
+
+ \includegraphics[width=\imgW,height=\imgH]{rio-q1-2} &
+ \includegraphics[width=\imgW,height=\imgH]{rio-q2-2} &
+ \includegraphics[width=\imgW,height=\imgH]{rio-q4-2} &
+ \includegraphics[width=\imgW,height=\imgH]{rio-q5} &
+ \includegraphics[width=\imgW,height=\imgH]{rio-q6} &
+ \includegraphics[width=\imgW,height=\imgH]{rio-q8} \\
+ 
+ \includegraphics[width=\imgW,height=\imgH]{rio-rf1-2} &
+ \includegraphics[width=\imgW,height=\imgH]{rio-rf2-2} &
+ \includegraphics[width=\imgW,height=\imgH]{rio-rf4-2} &
+ \includegraphics[width=\imgW,height=\imgH]{rio-rf5-2} &
+ \includegraphics[width=\imgW,height=\imgH]{rio-rf6} &
+ \includegraphics[width=\imgW,height=\imgH]{rio-rf8} \\
+ 
+ \includegraphics[width=\imgW,height=\imgH]{rio-r1} &
+ \includegraphics[width=\imgW,height=\imgH]{rio-r2} &
+ \includegraphics[width=\imgW,height=\imgH]{rio-r4} &
+ \includegraphics[width=\imgW,height=\imgH]{rio-r5-2} &
+ \includegraphics[width=\imgW,height=\imgH]{rio-r6-2} &
+ \includegraphics[width=\imgW,height=\imgH]{rio-r8-2} \\
+ 
+\end{tabular}
+\caption{\textbf{Top Row:} Ground truth images from the Residence Indoor-Outdoor dataset in a temporal order showing transition from nightly outdoor environment into bright indoor areas. \textbf{Middle Row:} Matched places using Vanilla SeqSLAM mostly showing false matching of images having similar lighting conditions. \textbf{Bottom Row:} Matched places using proposed method showing correct place recognition. It also shows the transition in environment from broad daylight to dark indoor areas. \emph{Note:} The images captured at night or in dark are shown here after manually brightening them only for sake of visualization.}
+\label{fig:rioTransImages}
+\end{figure}
 
 \subsubsection{Paper Submitted to IROS 2017}
 The proposed research work has been submitted as a conference paper to IROS 2017.
 
+\begin{figure}[htbp]
+\centering
+ \begin{tabular}{cc}
+ \hspace{-1cm}
+\includegraphics[scale=0.30]{RPerformanceBar_parking_amrapali} &
+\includegraphics[scale=0.30]{RPerformanceBar_cta-rail} \\
+(a) Parking Lot & (b) CTA-Rail \\
+ \end{tabular}
+ \caption{Performance charts showing maximum F1 Score with respect to different R (Neighborhood Normalization Zone Width) values. R is varied to the maximum value, that is, the size of reference database, after which maximum F1 score becomes constant. The patch normalization window size ($P$) parameter with value 4 happens to perform better as compared to others most of the times.}
+ \label{fig:performanceChart}
+\end{figure}
+
 \subsection{Motion Estimation under Unfavorable Conditions}
-Visual Odometry being one of the important competencies for mobile robotics is also an integral part of a visual SLAM system. The correct estimation of egomotion depends on the characteristics of both the camera motion and the environment. The state-of-the-art visual odometry methods are, though able to generate a 6-DoF pose, are sensitive to extreme changes in the camera motion or the operating environment. We explored the applicability of these methods on some of the real world datasets that exhibit variations in camera speed, for example, a vehicle on a heavy traffic route with frequent halts, and variations in illumination, for example, transiting from an artificially-lit to unlit environment at night etc.
+Visual Odometry being one of the important competencies for mobile robotics is also an integral part of a visual SLAM system. The correct estimation of egomotion depends on the characteristics of both the camera motion and the environment. The state-of-the-art visual odometry methods, though able to generate a 6-DoF pose, are sensitive to extreme changes in the camera motion or the operating environment. We explored the applicability of these methods on some of the real world datasets that exhibit variations in camera speed, for example, a vehicle on a heavy traffic route with frequent halts, and variations in illumination, for example, transiting from an artificially-lit to unlit environment at night etc.
+
+\begin{figure}
+\centering
+\begin{tabular}{cc}
+	\includegraphics[scale=0.33]{fsv3-night-2-hybridVO}&
+	\includegraphics[scale=0.33]{fsv3-day-hybridVO}\\
+	(a) Night Traverse & (b) Day Traverse \\	
+\end{tabular}
+	\caption{The conventional state-of-the-art visual odometry suffers from failures due to high camera speed, sharp turns and low-light or featureless environment. It is shown here how the proposed motion estimator can be used to correctly estimate the displacement under such circumstances.}
+	\label{fig:traj_vo}
+\end{figure}
 
 \subsubsection{Low Light and High Speed}
-The low light environment means less visual features as compared to the scene captured in broad daylight. Such a gradual drop of visual features, for example, while moving from an artificially-lit, cluttered scene to an unlit bland environment at night, leads to failure of visual odometry. We performed experiments on different datasets exhibiting such variations in environment using visual odometry component of ORB-SLAM and LSD-SLAM. The test datasets also had varying camera speeds in different parts of environment which further led to failures because capturing large and small motion signals requires different parameters settings for the system.
+The low light environment means less visual features as compared to the scene captured in broad daylight. A gradual drop of visual features, for example, while moving from an artificially-lit, cluttered scene to an unlit bland environment at night, leads to failure of visual odometry. We performed experiments on different datasets exhibiting such variations in environment using visual odometry component of ORB-SLAM and LSD-SLAM. The test datasets also had varying camera speeds in different parts of environment which further led to failures because capturing large and small motion signals requires different parameters settings for the system.
 
-We developed a method to generate a motion signal for unfavorable conditions as described above, using sum of absolute difference (SAD) score between down-sampled and patch-normalized consecutive images. This is similar to place recognition method used in SeqSLAM. The patch-normalization of images is able to handle the variations due to environmental conditions. It was also observed that SAD scores between images drops gradually with increasing frame separation between the images in an image sequence. Hence, we used a polynomial fitting method to estimate the camera speed according to the SAD score patterns. We were able to estimate the high-speed instances of camera motion within the test dataset where stat-of-the-art methods failed. We intend to use a hybrid approach that can make use of the proposed motion estimator to either tune the state-of-the-art method parameters to correctly estimate a 6-DoF pose or to club the output of both the systems to prevent failure and generate a consistent odometry information.
+We developed a method to generate a motion signal for unfavorable conditions as described above, using sum of absolute difference (SAD) score between down-sampled and patch-normalized consecutive images. This is equivalent to \emph{normalized photometric error} and closely relates to place recognition method used in SeqSLAM. The patch-normalization of images is able to handle the variations due to environmental conditions. It was also observed that SAD scores between images drops gradually with increasing frame separation between the images in an image sequence. Hence, we used a polynomial fitting method to estimate the camera speed according to the SAD score patterns. We were able to estimate the high-speed instances of camera motion within the test dataset where stat-of-the-art methods failed. This is shown in Figure:\ref{fig:traj_vo} with ground truth trajectory. The point of failures are mainly related to transition from well-lit to unlit areas and sudden increase in camera speed. We plan to use a hybrid approach that can make use of the proposed motion estimator to either tune the state-of-the-art method parameters to correctly estimate a 6-DoF pose or to club the output of both the systems to prevent failure and generate a consistent odometry information.
+
+\newcommand{\scaleOne}{0.175}
+\begin{figure}
+\centering
+\begin{tabular}{cccc}
+\hspace{-1cm}
+	\includegraphics[scale=\scaleOne,trim={0.5cm 3cm 0.5cm 5cm},clip]{fsv3-1-gtOverDiffMat-fixed} &
+	\includegraphics[scale=\scaleOne,trim={0.5cm 3cm 0.5cm 5cm},clip]{fsv3-1-gtOverDiffMat-proposed} &
+	\includegraphics[scale=\scaleOne]{sp-gtOverDiffMat-fixed} &
+	\includegraphics[scale=\scaleOne]{sp-gtOverDiffMat-proposed} \\
+	Vanilla & Proposed & Vanilla & Proposed \\
+	\multicolumn{2}{c}{KG-Footpath} &			
+	\multicolumn{2}{c}{Surfers Paradise} \\			
+\end{tabular}
+	\caption{(a) Ground Truth Matches plotted over the SAD score difference matrix between query and reference images for both vanilla and proposed method.}
+	\label{fig:gtDiffMat}
+\end{figure}
+
 
 \subsubsection{Speed-Normalized Data Sampling}
-We explored the scope of improving place recognition performance using state-of-the-art visual odometry methods. The motion information is often required in the place recognition framework in order to sample the images at a constant distance as opposed to constant frame separation. A robot with uniform motion will not be affected by such a choice, but in practice, the place recognition and visual SLAM applications contain reference and query imagery captured at varying camera speeds, for example, a vehicle on road with varying traffic conditions on same route at probably different times of day. The speed-normalized imagery can be either obtained using a separate sensor or a visual odometry solution. The challenges involved in using a state-of-the-art visual odometry solution are described in previous subsection. Hence, we resort to the use of proposed motion estimator, also described above, to speed-normalize the image databases for both query and reference. The motion estimator determines the ideal frame separation between the images based on the SAD score between them. This dynamic frame separation corresponds to the physical camera motion and is estimated high when camera moves slowly and low when camera moves fast. We observed a significant improvement in SeqSLAM's place recognition performance using the proposed speed-normalized data sampling before starting to match the places. \textbf{``fig-results''}
+We explored the scope of improving place recognition performance using state-of-the-art visual odometry methods. The motion information is often required in the place recognition framework in order to sample the images at a constant distance as opposed to constant frame separation. A robot moving uniformly will not be affected by such a choice, but in practice, the place recognition and visual SLAM applications contain reference and query imagery captured at varying camera speeds. A perfect example of such a scenario is an on-road vehicle moving at variable pace, due to varying traffic conditions on a particular route at different times of day. Figure:\ref{fig:gtDiffMat} shows similarity matrices between reference and query image databases for two different datasets with different methods of frame sampling.
+
+The speed-normalized imagery can either be obtained using a separate sensor or a visual odometry solution. The challenges involved in using a state-of-the-art visual odometry solution are described in previous subsection. Hence, we resort to the use of proposed motion estimator, also described above, to speed-normalize the image databases for both query and reference. The motion estimator determines the ideal frame separation between the images based on the SAD score between them. This dynamic frame separation corresponds to the physical camera motion and is estimated high when camera moves slowly and low when camera moves fast. We observed a significant improvement in SeqSLAM's place recognition performance using the proposed speed-normalized data sampling before starting to match the places. Figure:\ref{fig:perfSpeedNorm} shows performance comparison between vanilla method and proposed approach with speed-normalized frame sampling.
 
 \subsubsection{Planned Submission for ICRA 2018}
 We plan to submit the proposed research work to ICRA 2018 with some additional research work on top of it.
 
-\section{Timeline}
-
+\begin{figure}
+\centering
+\begin{tabular}{cc}
+\hspace{-1cm}
+	\includegraphics[scale=0.32]{fsv3-1-perf-speedNorm-3d}&
+	\includegraphics[scale=0.32]{sp-perf-speedNorm-3d}\\
+	(a) Kelvin Grove Footpath & (b) Surfers Paradise \\	
+\end{tabular}
+	\caption{Performance curves for vanilla and proposed approach for Kelvin Grove Footpath and Surfers Paradise datasets. Though the trends across the two important parameters - \emph{Sequence Length} and \emph{Search Range}, remain same as shown in contours; the overall performance gain is huge using proposed approach.}
+	\label{fig:perfSpeedNorm}
+\end{figure}
 
 \section{Conclusion}
+We described the visual SLAM system and its individual components, that is, visual place recognition, visual odometry and representation map. We also explored the possibilities of use of semantics in SLAM framework. We reviewed the relevant literature for all the related components and identified the challenges and viable research gaps. Then we formulated our research problem stating the need of a \emph{6-Dof Semantics-Aware Condition- and Viewpoint-Invariant Visual SLAM} system along with a set of research questions. The possible solutions to these research questions, addressing all the challenges are then detailed within a research plan for the thesis. Finally, the research work progress of last year in line with the research plan is described. The challenges that still remain to solve are summarized as following:
+\begin{itemize}
+ \item Developing a robust visual odometry solution for rapid camera motion and adverse environmental conditions.
+ \item Estimating 3D relative pose for loop closures influenced by vast appearance changes.
+ \item Exploring the use of semantics with an integrated approach towards a semantics-aware visual SLAM system.
+\end{itemize}
+With reference to the attached timeline, we plan to address all the challenges and fill these research gaps by the end of PhD with research publications.
+
+
+\clearpage
 
 \bibliographystyle{unsrt}
 \bibliography{../mendeley}
