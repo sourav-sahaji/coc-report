@@ -49,7 +49,7 @@ Visual SLAM is a key robotic competency that involves simultaneously mapping an 
 
 The use of visual cues implies using robust representations of raw images to be able to correctly recognize places in the map that a robot revisits as well as to accurately estimate ego-motion in order to create a map of environment. Such image representations need to be robust against variations in the viewpoint and environmental conditions or alternatively, be able to accordingly adapt to such variations. Further, the representational maps created by state-of-the-art methods are generally only geometric; researchers have only recently started adding semantics to the maps to obtain interactive 3D reconstructions of environment. However, a semantic SLAM system should not just require semantic mapping, it should also be able to exploit that semantic information to improve localization robustness, resulting in a closed loop semantic SLAM framework which is able to generate better semantic labels as well.
 
-We will particularly address the following research questions:
+We will particularly address the following research questions leading us towards semantic SLAM:
 \begin{itemize}
  \item How can we characterize a visual SLAM system’s response to variations in environment and ego-motion, and consequently make it more robust with regards to both visual place recognition and visual odometry processes?
  \item How can visual semantic information improve the robustness and generality of a visual SLAM system?
@@ -313,7 +313,7 @@ One of the simplest use of semantics seems to be imparting meaning to the enviro
 % \paragraph{Expected Outcome:}
 % We expect to set up a performance benchmark for outdoor scene categorizations as current state-of-the-art approaches, mostly focused on objects, are not able to correctly recognize objects when environmental conditions are not ideal. We will also study the utility of these robust semantic representations of the environment for a visual place recognition system. It would be expected that such a place description would be able to handle the variations in environmental conditions better and hence, improve the performance of visual place recognition system.
 
-\subsubsection{Semantic Segmentation \emph{Across} Places}
+\subsubsection{Semantic Segmentation of Environment}
 % \paragraph{Motivation:}
 The environment plays a key role in determining the performance of any robotic application because it is often the case that many of the applications are designed specific to certain environment types and therefore are brittle towards significant variations in the environmental settings. In context of visual place recognition and visual odometry, the variations in environment are induced mainly due to \emph{scene structure} and \emph{transient conditions}. The scene structure is actually the basis for differentiating places from each other, but frequent transitions within different environments call for different parameter settings for improved performance, for example, urban canyons versus highways or forests, or outdoor vs indoor etc. On the other hand, transient conditions like time of day, weather and season, though representing the same place, remarkably change the visual appearance of the scene. Therefore, it is necessary to understand the environment and allow possible adaptive robot behavior for variations in the environment.
 
@@ -341,7 +341,7 @@ The use of semantic labels to segment the environment can be firstly helpful in 
  \label{fig:semantic-across-example}
 \end{figure}
 
-\subsubsection{Semantic Segmentation \emph{Within} Places}
+\subsubsection{Semantic Segmentation Within an Image}
 The semantic segmentation of an image has been vastly explored in literature, but depending on the target application for such segmentation, most of them are not relevant for a visual SLAM system. The advances in semantic segmentation based on object recognition, whether sparse \cite{girshick2014rich} or dense \cite{long2015fully}, are useful in visual SLAM because it enables resolving of each individual entity within an image. Most of these methods use deep convolutional neural networks and will be a suitable choice for this thesis as well. The bottleneck that can be foreseen is the lack of generality with respect to the objects that are recognized. 
 
 First, it does not cover each and every object in the world, which is obviously not an easy task, hence we will need a hybrid approach that also learns new object classes on-line. 
@@ -365,7 +365,7 @@ We expect to obtain the semantic regions within the environment which are salien
 
 \subsection{6-DoF Semantics-Aware Visual SLAM System}
 
-\subsubsection{Condition-Invariant 3-D Relative Pose Estimation}
+\subsubsection{Appearance-Robust 3-D Relative Pose Estimation}
 We have explored visual place recognition systems that are condition-invariant \cite{Milford2012,Niko2015,chen2017deep}, but they lack the ability to generate a 3-D relative pose between the matching places, also termed as \emph{loop closures}. In order to obtain a 6-DoF visual SLAM system, it is important to have the 3-D pose estimation for condition-invariant representation of places.
 
 \paragraph{Planned Approach:}
@@ -541,8 +541,8 @@ The effectiveness of such a system is more pronounced for the image datasets hav
 \label{fig:rioTransImages}
 \end{figure}
 
-\subsubsection{Paper Submitted to IROS 2017}
-The proposed research work has been submitted as a conference paper to IROS 2017.
+\subsubsection{Paper Accepted at IROS 2017}
+The proposed research work has been accepted as a conference paper in IROS 2017.
 
 \begin{figure}[htbp]
 \centering
